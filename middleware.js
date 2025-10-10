@@ -1,21 +1,65 @@
 import { NextResponse } from 'next/server';
 
+// Platform domains that should serve the main platform
+const PLATFORM_DOMAINS = [
+  'localhost:3000',
+  'crownbidder.com',
+  'www.crownbidder.com',
+  'app.crownbidder.com'
+];
+
 export async function middleware(request) {
   const hostname = request.headers.get('host') || '';
-  const url = request.nextUrl;
+  const { pathname } = request.nextUrl;
 
-  // Extract domain parts
-  const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'localhost:3000';
-  const isMainDomain = hostname === mainDomain || hostname.startsWith('localhost');
-
-  // If it's the main domain, continue normally
-  if (isMainDomain) {
+  // Skip middleware for static assets and Next.js internals
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.') ||
+    pathname.startsWith('/favicon')
+  ) {
     return NextResponse.next();
   }
 
-  // For custom domains, resolve tenant and rewrite to tenant routes
+  // Check if this is a platform domain
+  const isPlatformDomain = PLATFORM_DOMAINS.some(domain => 
+    hostname === domain || hostname?.endsWith(domain)
+  );
+
+  if (isPlatformDomain) {
+    // Platform domain - serve platform routes normally
+    return handlePlatformRouting(request);
+  } else {
+    // Custom domain - resolve tenant and serve tenant routes
+    return handleTenantRouting(request, hostname);
+  }
+}
+
+async function handlePlatformRouting(request) {
+  const { pathname } = request.nextUrl;
+
+  // Redirect root to dashboard if we have auth (basic check)
+  if (pathname === '/') {
+    const token = request.cookies.get('crown_bidder_token');
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  // Block tenant routes on platform domain
+  if (pathname.startsWith('/tenant')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+async function handleTenantRouting(request, hostname) {
+  const { pathname } = request.nextUrl;
+
   try {
-    // Call backend to resolve tenant by domain
+    // Resolve site by domain
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     const response = await fetch(`${apiUrl}/api/sites/resolve?domain=${hostname}`, {
       headers: {
@@ -24,49 +68,74 @@ export async function middleware(request) {
     });
 
     if (!response.ok) {
-      // If site not found, redirect to main domain
-      return NextResponse.redirect(new URL('/', `http://${mainDomain}`));
+      // Site not found for this domain
+      return handleSiteNotFound(request, hostname);
     }
 
-    const data = await response.json();
-    const site = data.data;
+    const { data } = await response.json();
+    const site = data.site;
 
-    // Rewrite to tenant routes
-    const path = url.pathname;
-    let rewritePath = path;
+    // Check if domain is verified
+    if (site.domainVerificationStatus !== 'verified') {
+      return handleUnverifiedDomain(request, site);
+    }
 
-    // Map paths to tenant routes
-    if (path === '/' || path === '') {
+    // Map tenant routes
+    let rewritePath = pathname;
+    
+    if (pathname === '/') {
       rewritePath = '/tenant';
-    } else if (path.startsWith('/auctions')) {
-      rewritePath = `/tenant${path}`;
-    } else if (path.startsWith('/about')) {
-      rewritePath = `/tenant${path}`;
-    } else if (path.startsWith('/login') || path.startsWith('/signup')) {
-      // Keep auth routes as-is for tenant sites
-      rewritePath = path;
+    } else if (pathname.startsWith('/auctions')) {
+      rewritePath = `/tenant${pathname}`;
+    } else if (pathname.startsWith('/about')) {
+      rewritePath = '/tenant/about';
+    } else if (pathname.startsWith('/login') || pathname.startsWith('/signup')) {
+      // Keep auth routes for tenant login
+      rewritePath = pathname;
     } else {
-      rewritePath = `/tenant${path}`;
+      // Block platform routes on tenant domains
+      if (pathname.startsWith('/dashboard') || 
+          pathname.startsWith('/create-site') ||
+          pathname.startsWith('/site/')) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      rewritePath = `/tenant${pathname}`;
     }
 
-    // Clone the URL and set the pathname
-    const rewriteUrl = url.clone();
+    // Rewrite URL
+    const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = rewritePath;
-
-    // Create response with rewrite
     const response = NextResponse.rewrite(rewriteUrl);
 
-    // Add tenant info to headers for use in components
+    // Add tenant info to headers for components
     response.headers.set('x-tenant-id', site._id);
     response.headers.set('x-tenant-name', site.name);
     response.headers.set('x-tenant-domain', site.customDomain);
+    response.headers.set('x-tenant-theme', site.settings?.theme || 'classic-blue');
+    response.headers.set('x-tenant-primary-color', site.settings?.primaryColor || '#1e40af');
+    response.headers.set('x-tenant-secondary-color', site.settings?.secondaryColor || '#64748b');
+    response.headers.set('x-tenant-logo', site.settings?.logoUrl || '');
 
     return response;
+
   } catch (error) {
     console.error('Tenant resolution error:', error);
-    // On error, redirect to main domain
-    return NextResponse.redirect(new URL('/', `http://${mainDomain}`));
+    return handleSiteNotFound(request, hostname);
   }
+}
+
+function handleSiteNotFound(request, hostname) {
+  // Redirect to platform with error message
+  const platformUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'http://localhost:3000';
+  const redirectUrl = `${platformUrl}/site-not-found?domain=${encodeURIComponent(hostname)}`;
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handleUnverifiedDomain(request, site) {
+  // Show domain verification page
+  const platformUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'http://localhost:3000';
+  const redirectUrl = `${platformUrl}/site/${site._id}/verify-domain`;
+  return NextResponse.redirect(redirectUrl);
 }
 
 // Configure which paths the middleware should run on
