@@ -1,26 +1,49 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useSocket } from '@/contexts/SocketContext';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import api from '@/lib/api';
-import { AUCTION_STATUS } from '@/lib/constants';
+import { AUCTION_STATUS, SOCKET_EVENTS } from '@/lib/constants';
 import { formatCurrency } from '@/lib/utils';
 
 export default function AuctionControlPage() {
   const { id: siteId, auctionId } = useParams();
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const {
+    socket,
+    isConnected,
+    connectionError,
+    addEventListener,
+    joinAuction,
+    startAuction,
+    endAuction,
+    pauseAuction,
+    nextItem,
+    broadcastMessage,
+  } = useSocket();
   
   const [auction, setAuction] = useState(null);
   const [currentItem, setCurrentItem] = useState(null);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [bids, setBids] = useState([]);
+  const [realtimeBids, setRealtimeBids] = useState([]);
   const [bidAmount, setBidAmount] = useState('');
   const [auctioneerNotes, setAuctioneerNotes] = useState('');
+  const [connectedUsers, setConnectedUsers] = useState({ bidders: 0, observers: 0 });
+  const [auctionStats, setAuctionStats] = useState({
+    totalBids: 0,
+    totalValue: 0,
+    currentHighBid: null,
+  });
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [itemSoldFor, setItemSoldFor] = useState(null);
+
+  const notesRef = useRef(null);
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -37,6 +60,13 @@ export default function AuctionControlPage() {
   useEffect(() => {
     fetchAuction();
   }, [auctionId]);
+
+  useEffect(() => {
+    if (auction && socket && isConnected) {
+      joinAuction(auction._id);
+      setupSocketListeners();
+    }
+  }, [auction, socket, isConnected]);
 
   useEffect(() => {
     if (auction && auction.items && auction.items.length > 0) {
@@ -64,20 +94,91 @@ export default function AuctionControlPage() {
     }
   };
 
+  const setupSocketListeners = () => {
+    if (!socket) return;
+
+    const cleanupFunctions = [
+      addEventListener(SOCKET_EVENTS.BID_PLACED, handleBidPlaced),
+      addEventListener(SOCKET_EVENTS.AUCTION_STATUS_CHANGED, handleStatusChanged),
+      addEventListener(SOCKET_EVENTS.ADMIN_CONNECTED_USERS, handleConnectedUsersUpdate),
+      addEventListener(SOCKET_EVENTS.AUCTION_STARTED, handleAuctionStarted),
+      addEventListener(SOCKET_EVENTS.AUCTION_ENDED, handleAuctionEnded),
+    ];
+
+    return () => {
+      cleanupFunctions.forEach(cleanup => cleanup());
+    };
+  };
+
+  const handleBidPlaced = (data) => {
+    if (data.auctionId === auction._id) {
+      setRealtimeBids(prev => [data, ...prev.slice(0, 19)]); // Keep last 20 bids
+      
+      if (data.itemId === currentItem?._id) {
+        setAuctionStats(prev => ({
+          ...prev,
+          currentHighBid: data,
+          totalBids: prev.totalBids + 1,
+          totalValue: prev.totalValue + data.amount,
+        }));
+        
+        // Update bid amount to next increment
+        const nextBid = data.amount + (auction.settings?.bidIncrement || 5);
+        setBidAmount(nextBid.toString());
+      }
+    }
+  };
+
+  const handleStatusChanged = (data) => {
+    if (data.auctionId === auction._id) {
+      setAuction(prev => ({ ...prev, status: data.status }));
+    }
+  };
+
+  const handleConnectedUsersUpdate = (data) => {
+    setConnectedUsers(data);
+  };
+
+  const handleAuctionStarted = (data) => {
+    if (data.auctionId === auction._id) {
+      setAuction(prev => ({ ...prev, status: AUCTION_STATUS.LIVE }));
+    }
+  };
+
+  const handleAuctionEnded = (data) => {
+    if (data.auctionId === auction._id) {
+      setAuction(prev => ({ ...prev, status: AUCTION_STATUS.ENDED }));
+      router.push(`/site/${siteId}/auctions/${auctionId}`);
+    }
+  };
+
   const handleNextItem = () => {
     if (currentItemIndex < auction.items.length - 1) {
-      setCurrentItemIndex(currentItemIndex + 1);
+      const newIndex = currentItemIndex + 1;
+      setCurrentItemIndex(newIndex);
+      
+      // Notify all connected users about item change
+      if (socket && isConnected) {
+        nextItem(auction._id, auction.items[newIndex]._id);
+      }
     }
   };
 
   const handlePreviousItem = () => {
     if (currentItemIndex > 0) {
-      setCurrentItemIndex(currentItemIndex - 1);
+      const newIndex = currentItemIndex - 1;
+      setCurrentItemIndex(newIndex);
+      
+      // Notify all connected users about item change
+      if (socket && isConnected) {
+        nextItem(auction._id, auction.items[newIndex]._id);
+      }
     }
   };
 
   const handlePauseAuction = async () => {
     try {
+      pauseAuction(auction._id);
       await api.auctions.updateStatus(auctionId, AUCTION_STATUS.PAUSED);
       setAuction(prev => ({ ...prev, status: AUCTION_STATUS.PAUSED }));
     } catch (error) {
@@ -88,11 +189,38 @@ export default function AuctionControlPage() {
   const handleEndAuction = async () => {
     if (confirm('Are you sure you want to end this auction? This action cannot be undone.')) {
       try {
+        endAuction(auction._id);
         await api.auctions.updateStatus(auctionId, AUCTION_STATUS.ENDED);
         router.push(`/site/${siteId}/auctions/${auctionId}`);
       } catch (error) {
         console.error('Error ending auction:', error);
       }
+    }
+  };
+
+  const handleSoldItem = () => {
+    const currentHighBid = auctionStats.currentHighBid;
+    if (currentHighBid) {
+      setItemSoldFor(currentHighBid.amount);
+      
+      // Add notes about the sale
+      const saleNote = `Item ${currentItemIndex + 1} sold for ${formatCurrency(currentHighBid.amount)} to Bidder #${currentHighBid.bidderNumber || '***'}`;
+      setAuctioneerNotes(prev => prev ? `${prev}\n${saleNote}` : saleNote);
+      
+      // Move to next item automatically after a brief delay
+      setTimeout(() => {
+        if (currentItemIndex < auction.items.length - 1) {
+          handleNextItem();
+          setItemSoldFor(null);
+        }
+      }, 2000);
+    }
+  };
+
+  const handleBroadcast = () => {
+    if (broadcastMsg.trim() && socket && isConnected) {
+      broadcastMessage(auction._id, broadcastMsg.trim());
+      setBroadcastMsg('');
     }
   };
 
@@ -143,12 +271,20 @@ export default function AuctionControlPage() {
           <div>
             <h1 className="text-xl font-bold">🔴 LIVE AUCTION CONTROL</h1>
             <p className="text-red-100">{auction.title}</p>
+            {!isConnected && (
+              <p className="text-red-200 text-sm">
+                ⚠️ Connection Issue: {connectionError || 'Reconnecting...'}
+              </p>
+            )}
           </div>
           
           <div className="flex items-center space-x-4">
             <div className="text-right">
               <div className="text-sm text-red-100">Item {currentItemIndex + 1} of {auction.items.length}</div>
               <div className="text-lg font-semibold">{currentItem.title}</div>
+              {itemSoldFor && (
+                <div className="text-green-200 font-bold">SOLD for {formatCurrency(itemSoldFor)}!</div>
+              )}
             </div>
             
             <div className="flex space-x-2">
@@ -156,6 +292,7 @@ export default function AuctionControlPage() {
                 variant="outline"
                 onClick={handlePauseAuction}
                 className="bg-yellow-600 hover:bg-yellow-700 border-yellow-600"
+                disabled={!isConnected}
               >
                 ⏸️ Pause
               </Button>
@@ -190,7 +327,7 @@ export default function AuctionControlPage() {
                   <Button
                     variant="outline"
                     onClick={handlePreviousItem}
-                    disabled={currentItemIndex === 0}
+                    disabled={currentItemIndex === 0 || !isConnected}
                     className="border-gray-600 text-gray-300 hover:bg-gray-700"
                   >
                     ← Previous
@@ -201,7 +338,7 @@ export default function AuctionControlPage() {
                   <Button
                     variant="outline"
                     onClick={handleNextItem}
-                    disabled={currentItemIndex === auction.items.length - 1}
+                    disabled={currentItemIndex === auction.items.length - 1 || !isConnected}
                     className="border-gray-600 text-gray-300 hover:bg-gray-700"
                   >
                     Next →
@@ -232,6 +369,15 @@ export default function AuctionControlPage() {
                       </div>
                     )}
                     <div className="flex justify-between">
+                      <span className="text-gray-400">Current High:</span>
+                      <span className="text-green-400 font-semibold">
+                        {auctionStats.currentHighBid ? 
+                          formatCurrency(auctionStats.currentHighBid.amount) : 
+                          'No bids'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-gray-400">Condition:</span>
                       <span className="text-white">{currentItem.condition || 'Not specified'}</span>
                     </div>
@@ -249,12 +395,12 @@ export default function AuctionControlPage() {
 
             {/* Bidding Control */}
             <Card className="p-6 bg-gray-800 border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-4">Bidding Control</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">Auctioneer Controls</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Current Bid Amount
+                    Current Bidding At
                   </label>
                   <div className="flex space-x-2">
                     <input
@@ -263,10 +409,12 @@ export default function AuctionControlPage() {
                       onChange={(e) => setBidAmount(e.target.value)}
                       step="0.01"
                       className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={!isConnected}
                     />
                     <Button
                       onClick={() => setBidAmount(getNextBidAmount().toString())}
                       className="bg-green-600 hover:bg-green-700"
+                      disabled={!isConnected}
                     >
                       +{auction.settings?.bidIncrement || 5}
                     </Button>
@@ -275,34 +423,74 @@ export default function AuctionControlPage() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Quick Bid Actions
+                    Auction Actions
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button className="bg-blue-600 hover:bg-blue-700">
-                      Accept Bid
-                    </Button>
-                    <Button className="bg-yellow-600 hover:bg-yellow-700">
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700 text-sm"
+                      disabled={!isConnected}
+                    >
                       Going Once
                     </Button>
-                    <Button className="bg-orange-600 hover:bg-orange-700">
+                    <Button 
+                      className="bg-yellow-600 hover:bg-yellow-700 text-sm"
+                      disabled={!isConnected}
+                    >
                       Going Twice
                     </Button>
-                    <Button className="bg-green-600 hover:bg-green-700">
-                      Sold!
+                    <Button 
+                      onClick={handleSoldItem}
+                      className="bg-green-600 hover:bg-green-700 text-sm"
+                      disabled={!auctionStats.currentHighBid || !isConnected}
+                    >
+                      SOLD!
+                    </Button>
+                    <Button 
+                      className="bg-gray-600 hover:bg-gray-700 text-sm"
+                      disabled={!isConnected}
+                    >
+                      No Sale
                     </Button>
                   </div>
                 </div>
               </div>
               
-              <div className="mt-4">
+              {/* Broadcast Message */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Broadcast to All Bidders
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={broadcastMsg}
+                    onChange={(e) => setBroadcastMsg(e.target.value)}
+                    placeholder="Type message to broadcast..."
+                    className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!isConnected}
+                    onKeyPress={(e) => e.key === 'Enter' && handleBroadcast()}
+                  />
+                  <Button
+                    onClick={handleBroadcast}
+                    disabled={!broadcastMsg.trim() || !isConnected}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Broadcast
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Auctioneer Notes */}
+              <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Auctioneer Notes
                 </label>
                 <textarea
+                  ref={notesRef}
                   value={auctioneerNotes}
                   onChange={(e) => setAuctioneerNotes(e.target.value)}
-                  placeholder="Notes for this item..."
-                  rows={3}
+                  placeholder="Notes for this auction..."
+                  rows={4}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -316,61 +504,73 @@ export default function AuctionControlPage() {
               <h3 className="text-lg font-semibold text-white mb-4">Live Stats</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Connected Bidders:</span>
-                  <span className="text-green-400 font-semibold">12</span>
+                  <span className="text-gray-400">Connection:</span>
+                  <span className={`font-semibold ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+                    {isConnected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Active Bidders:</span>
+                  <span className="text-green-400 font-semibold">{connectedUsers.bidders}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Observers:</span>
+                  <span className="text-blue-400 font-semibold">{connectedUsers.observers}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Total Bids:</span>
-                  <span className="text-white font-semibold">{auction.totalBids || 0}</span>
+                  <span className="text-white font-semibold">{auctionStats.totalBids}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Items Sold:</span>
+                  <span className="text-gray-400">Items Completed:</span>
                   <span className="text-white font-semibold">{currentItemIndex}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Total Sales:</span>
+                  <span className="text-gray-400">Total Sales Value:</span>
                   <span className="text-green-400 font-semibold">
-                    {formatCurrency(0)}
+                    {formatCurrency(auctionStats.totalValue)}
                   </span>
                 </div>
               </div>
             </Card>
 
-            {/* Recent Bids */}
-            <Card className="p-6 mb-6 bg-gray-800 border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Recent Bids</h3>
-              <div className="space-y-2">
-                {bids.length > 0 ? (
-                  bids.slice(0, 5).map((bid, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-700 rounded">
-                      <span className="text-gray-300">Bidder #{bid.bidderId}</span>
-                      <span className="text-green-400 font-semibold">
-                        {formatCurrency(bid.amount)}
-                      </span>
+            {/* Live Bids */}
+            <Card className="p-6 bg-gray-800 border-gray-700">
+              <h3 className="text-lg font-semibold text-white mb-4">Live Bids</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {realtimeBids.length > 0 ? (
+                  realtimeBids.map((bid, index) => (
+                    <div key={`${bid.bidderId}-${bid.timestamp}`} className={`flex justify-between items-center p-2 rounded ${
+                      index === 0 ? 'bg-green-700' : 'bg-gray-700'
+                    }`}>
+                      <div className="flex items-center space-x-2">
+                        <span className={`w-2 h-2 rounded-full ${
+                          index === 0 ? 'bg-green-400' : 'bg-gray-400'
+                        }`}></span>
+                        <span className="text-gray-300 text-sm">
+                          Bidder #{bid.bidderNumber || '***'}
+                        </span>
+                        {index === 0 && (
+                          <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded">
+                            HIGH
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-semibold ${
+                          index === 0 ? 'text-green-400' : 'text-white'
+                        }`}>
+                          {formatCurrency(bid.amount)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(bid.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
                     </div>
                   ))
                 ) : (
                   <p className="text-gray-400 text-center py-4">No bids yet</p>
                 )}
-              </div>
-            </Card>
-
-            {/* Connected Users */}
-            <Card className="p-6 bg-gray-800 border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Connected Users</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-gray-300">12 active bidders</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span className="text-gray-300">3 observers</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                  <span className="text-gray-300">Real-time updates active</span>
-                </div>
               </div>
             </Card>
           </div>
