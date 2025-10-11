@@ -8,6 +8,13 @@ const PLATFORM_DOMAINS = [
   'app.crownbidder.com'
 ];
 
+// Vercel preview and production domains
+const isVercelDomain = (hostname) => {
+  return hostname?.endsWith('.vercel.app') || 
+         hostname?.includes('vercel.app') ||
+         hostname?.includes('localhost:3000');
+};
+
 export async function middleware(request) {
   const hostname = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
@@ -25,7 +32,7 @@ export async function middleware(request) {
   // Check if this is a platform domain
   const isPlatformDomain = PLATFORM_DOMAINS.some(domain => 
     hostname === domain || hostname?.endsWith(domain)
-  );
+  ) || isVercelDomain(hostname);
 
   if (isPlatformDomain) {
     // Platform domain - serve platform routes normally
@@ -125,17 +132,23 @@ async function handleTenantRouting(request, hostname) {
 }
 
 function handleSiteNotFound(request, hostname) {
-  // Redirect to platform with error message
-  const platformUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'http://localhost:3000';
-  const redirectUrl = `${platformUrl}/site-not-found?domain=${encodeURIComponent(hostname)}`;
-  return NextResponse.redirect(redirectUrl);
+  // If we're already on site-not-found page, don't redirect again
+  if (request.nextUrl.pathname === '/site-not-found') {
+    return NextResponse.next();
+  }
+  
+  // Redirect to site-not-found page with domain parameter
+  const url = request.nextUrl.clone();
+  url.pathname = '/site-not-found';
+  url.searchParams.set('domain', hostname);
+  return NextResponse.redirect(url);
 }
 
 function handleUnverifiedDomain(request, site) {
-  // Show domain verification page
-  const platformUrl = process.env.NEXT_PUBLIC_PLATFORM_URL || 'http://localhost:3000';
-  const redirectUrl = `${platformUrl}/site/${site._id}/verify-domain`;
-  return NextResponse.redirect(redirectUrl);
+  // Redirect to domain verification page
+  const url = request.nextUrl.clone();
+  url.pathname = `/site/${site._id}/verify-domain`;
+  return NextResponse.redirect(url);
 }
 
 // Configure which paths the middleware should run on
