@@ -63,15 +63,6 @@ export default function AuctionControlPage() {
     }
   }, [isAuthenticated, user, siteId, auctionId, router]);
 
-  // Early returns after hooks
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  if (user && user.siteId !== siteId) {
-    return null;
-  }
-
   useEffect(() => {
     if (auction && socket && isConnected) {
       joinAuction(auction._id);
@@ -85,6 +76,15 @@ export default function AuctionControlPage() {
       setBidAmount(auction.items[currentItemIndex].startingBid.toString());
     }
   }, [auction, currentItemIndex]);
+
+  // Early returns after all hooks
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (user && user.siteId !== siteId) {
+    return null;
+  }
 
   const fetchAuction = async () => {
     try {
