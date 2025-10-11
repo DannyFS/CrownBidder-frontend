@@ -31,25 +31,35 @@ export default function AuctionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('created_desc');
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    router.push('/login?redirect=' + encodeURIComponent(`/site/${siteId}/auctions`));
-    return null;
-  }
-
-  // Check if user has access to this site
-  if (user && user.siteId !== siteId) {
-    router.push('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=' + encodeURIComponent(`/site/${siteId}/auctions`));
+      return;
+    }
+    
+    if (user && user.siteId !== siteId) {
+      router.push('/dashboard');
+      return;
+    }
+  }, [isAuthenticated, user, siteId, router]);
 
   useEffect(() => {
-    fetchAuctions();
-  }, [siteId]);
+    if (isAuthenticated && (!user || user.siteId === siteId)) {
+      fetchAuctions();
+    }
+  }, [siteId, isAuthenticated, user]);
 
   useEffect(() => {
     filterAndSortAuctions();
   }, [auctions, activeFilter, searchQuery, sortBy]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (user && user.siteId !== siteId) {
+    return null;
+  }
 
   const fetchAuctions = async () => {
     try {

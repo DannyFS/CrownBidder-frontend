@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import SiteCreationWizard from '@/components/forms/SiteCreationWizard';
@@ -11,9 +11,13 @@ export default function CreateSitePage() {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
 
-  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/create-site');
+    }
+  }, [isAuthenticated, router]);
+
   if (!isAuthenticated) {
-    router.push('/login?redirect=/create-site');
     return null;
   }
 

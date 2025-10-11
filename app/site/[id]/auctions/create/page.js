@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import AuctionCreationForm from '@/components/auctions/AuctionCreationForm';
@@ -13,15 +13,23 @@ export default function CreateAuctionPage() {
   
   const [isCreating, setIsCreating] = useState(false);
 
-  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=' + encodeURIComponent(`/site/${siteId}/auctions/create`));
+      return;
+    }
+    
+    if (user && user.siteId !== siteId) {
+      router.push('/dashboard');
+      return;
+    }
+  }, [isAuthenticated, user, siteId, router]);
+
   if (!isAuthenticated) {
-    router.push('/login?redirect=' + encodeURIComponent(`/site/${siteId}/auctions/create`));
     return null;
   }
 
-  // Check if user has access to this site
   if (user && user.siteId !== siteId) {
-    router.push('/dashboard');
     return null;
   }
 
