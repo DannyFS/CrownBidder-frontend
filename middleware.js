@@ -105,18 +105,18 @@ async function handleTenantRouting(request, hostname) {
     // Rewrite URL
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = rewritePath;
-    const response = NextResponse.rewrite(rewriteUrl);
+    const rewriteResponse = NextResponse.rewrite(rewriteUrl);
 
     // Add tenant info to headers for components
-    response.headers.set('x-tenant-id', site._id);
-    response.headers.set('x-tenant-name', site.name);
-    response.headers.set('x-tenant-domain', site.customDomain);
-    response.headers.set('x-tenant-theme', site.settings?.theme || 'classic-blue');
-    response.headers.set('x-tenant-primary-color', site.settings?.primaryColor || '#1e40af');
-    response.headers.set('x-tenant-secondary-color', site.settings?.secondaryColor || '#64748b');
-    response.headers.set('x-tenant-logo', site.settings?.logoUrl || '');
+    rewriteResponse.headers.set('x-tenant-id', site._id);
+    rewriteResponse.headers.set('x-tenant-name', site.name);
+    rewriteResponse.headers.set('x-tenant-domain', site.customDomain);
+    rewriteResponse.headers.set('x-tenant-theme', site.settings?.theme || 'classic-blue');
+    rewriteResponse.headers.set('x-tenant-primary-color', site.settings?.primaryColor || '#1e40af');
+    rewriteResponse.headers.set('x-tenant-secondary-color', site.settings?.secondaryColor || '#64748b');
+    rewriteResponse.headers.set('x-tenant-logo', site.settings?.logoUrl || '');
 
-    return response;
+    return rewriteResponse;
 
   } catch (error) {
     console.error('Tenant resolution error:', error);

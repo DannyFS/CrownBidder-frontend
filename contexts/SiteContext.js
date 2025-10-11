@@ -104,3 +104,11 @@ export function SiteProvider({ children }) {
 
   return <SiteContext.Provider value={value}>{children}</SiteContext.Provider>;
 }
+
+export function useSite() {
+  const context = useContext(SiteContext);
+  if (!context) {
+    throw new Error('useSite must be used within a SiteProvider');
+  }
+  return context;
+}

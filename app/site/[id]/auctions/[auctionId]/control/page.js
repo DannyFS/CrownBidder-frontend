@@ -45,21 +45,32 @@ export default function AuctionControlPage() {
 
   const notesRef = useRef(null);
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    router.push('/login?redirect=' + encodeURIComponent(`/site/${siteId}/auctions/${auctionId}/control`));
-    return null;
-  }
-
-  // Check if user has access to this site
-  if (user && user.siteId !== siteId) {
-    router.push('/dashboard');
-    return null;
-  }
-
   useEffect(() => {
     fetchAuction();
   }, [auctionId]);
+
+  useEffect(() => {
+    // Redirect if not authenticated
+    if (!isAuthenticated) {
+      router.push('/login?redirect=' + encodeURIComponent(`/site/${siteId}/auctions/${auctionId}/control`));
+      return;
+    }
+
+    // Check if user has access to this site
+    if (user && user.siteId !== siteId) {
+      router.push('/dashboard');
+      return;
+    }
+  }, [isAuthenticated, user, siteId, auctionId, router]);
+
+  // Early returns after hooks
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (user && user.siteId !== siteId) {
+    return null;
+  }
 
   useEffect(() => {
     if (auction && socket && isConnected) {

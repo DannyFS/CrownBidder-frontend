@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
-export default function SiteNotFoundPage() {
+function SiteNotFoundContent() {
   const searchParams = useSearchParams();
   const domain = searchParams.get('domain');
 
@@ -76,5 +77,17 @@ export default function SiteNotFoundPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SiteNotFoundPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="text-center">Loading...</div>
+      </div>
+    }>
+      <SiteNotFoundContent />
+    </Suspense>
   );
 }
