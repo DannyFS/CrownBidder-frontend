@@ -38,7 +38,7 @@ export default function HomePage() {
             <Link href="/login" className="px-4 py-2 text-gray-700 hover:text-primary transition">
               Login
             </Link>
-            <Link href="/create-account" className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+            <Link href="/create-site" className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
               Get Started
             </Link>
           </nav>
@@ -56,7 +56,7 @@ export default function HomePage() {
           Real-time bidding, automated payments, and comprehensive auction management.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/create-account" className="px-8 py-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition text-lg font-semibold">
+          <Link href="/create-site" className="px-8 py-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition text-lg font-semibold">
             Create Your Auction Site
           </Link>
           <Link href="/login" className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-900 rounded-lg hover:border-primary hover:text-primary transition text-lg font-semibold">
@@ -109,7 +109,7 @@ export default function HomePage() {
           <p className="text-xl mb-8 opacity-90">
             Get your custom auction site set up in minutes. No credit card required.
           </p>
-          <Link href="/create-account" className="inline-block px-8 py-4 bg-white text-primary rounded-lg hover:bg-gray-100 transition text-lg font-semibold">
+          <Link href="/create-site" className="inline-block px-8 py-4 bg-white text-primary rounded-lg hover:bg-gray-100 transition text-lg font-semibold">
             Create Your Site Now
           </Link>
         </div>
