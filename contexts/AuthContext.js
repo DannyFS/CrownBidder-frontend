@@ -73,7 +73,8 @@ export function AuthProvider({ children }) {
       setError(null);
       setIsLoading(true);
 
-      const response = await api.auth.login(credentials);
+      // Use platform login for main Crown Bidder site
+      const response = await api.auth.platformLogin(credentials);
       const { user: userData, token } = response.data;
 
       api.setToken(token);
@@ -95,7 +96,8 @@ export function AuthProvider({ children }) {
       setError(null);
       setIsLoading(true);
 
-      const response = await api.auth.signup(userData);
+      // Use platform signup for main Crown Bidder site
+      const response = await api.auth.platformSignup(userData);
       const { user: newUser, token } = response.data;
 
       api.setToken(token);
