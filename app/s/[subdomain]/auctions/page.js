@@ -1,55 +1,61 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import TenantLayout from '@/components/tenant/TenantLayout';
 
-export default function SubdomainAuctionsPage() {
-  const params = useParams();
-  const subdomain = params.subdomain;
-  const [tenant, setTenant] = useState(null);
-  const [auctions, setAuctions] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Get tenant info
-        const tenantResponse = await fetch(`/api/sites/resolve?subdomain=${subdomain}`);
-        if (!tenantResponse.ok) {
-          notFound();
-        }
-        const tenantData = await tenantResponse.json();
-        setTenant(tenantData.site);
-
-        // Get auctions for this tenant
-        const auctionsResponse = await fetch(`/api/auctions?siteId=${tenantData.site._id}`);
-        if (auctionsResponse.ok) {
-          const auctionsData = await auctionsResponse.json();
-          setAuctions(auctionsData.data || []);
-        }
-      } catch (error) {
-        console.error('Failed to load data:', error);
-        notFound();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [subdomain]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+async function getTenant(subdomain) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  
+  try {
+    const response = await fetch(`${apiUrl}/api/sites/resolve?subdomain=${subdomain}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.data.site;
+  } catch (error) {
+    console.error('Failed to load tenant:', error);
+    return null;
   }
+}
+
+async function getAuctions(siteId) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  
+  try {
+    const response = await fetch(`${apiUrl}/api/auctions?siteId=${siteId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Failed to load auctions:', error);
+    return [];
+  }
+}
+
+export default async function SubdomainAuctionsPage({ params }) {
+  const { subdomain } = await params;
+  const tenant = await getTenant(subdomain);
 
   if (!tenant) {
     notFound();
   }
+
+  const auctions = await getAuctions(tenant._id);
 
   return (
     <TenantLayout tenant={tenant}>

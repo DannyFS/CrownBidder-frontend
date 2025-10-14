@@ -1,49 +1,32 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { notFound, useParams } from 'next/navigation';
-import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import TenantLayout from '@/components/tenant/TenantLayout';
 
-export default function SubdomainHomePage() {
-  const params = useParams();
-  const subdomain = params.subdomain;
-  const [tenant, setTenant] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Get tenant info from headers (set by middleware)
-    const getTenantFromHeaders = () => {
-      // In client component, we need to fetch tenant data
-      const fetchTenant = async () => {
-        try {
-          const response = await fetch(`/api/sites/resolve?subdomain=${subdomain}`);
-          if (!response.ok) {
-            notFound();
-          }
-          const data = await response.json();
-          setTenant(data.site);
-        } catch (error) {
-          console.error('Failed to load tenant:', error);
-          notFound();
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchTenant();
-    };
-
-    getTenantFromHeaders();
-  }, [subdomain]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+async function getTenant(subdomain) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  
+  try {
+    const response = await fetch(`${apiUrl}/api/sites/resolve?subdomain=${subdomain}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store' // Always fetch fresh data for tenant resolution
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.data.site;
+  } catch (error) {
+    console.error('Failed to load tenant:', error);
+    return null;
   }
+}
+
+export default async function SubdomainHomePage({ params }) {
+  const { subdomain } = await params;
+  const tenant = await getTenant(subdomain);
 
   if (!tenant) {
     notFound();
