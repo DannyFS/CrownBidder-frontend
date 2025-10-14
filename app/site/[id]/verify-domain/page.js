@@ -36,6 +36,7 @@ export default function VerifyDomainPage() {
       try {
         setLoading(true);
         const response = await api.sites.get(siteId);
+        console.log('Site data from API:', response.data);
         setSite(response.data);
       } catch (error) {
         setError(error.message);
@@ -158,7 +159,7 @@ export default function VerifyDomainPage() {
             {site.customDomain ? (
               <>Configure DNS settings for <span className="font-medium">{site.customDomain}</span></>
             ) : (
-              <>Your subdomain <span className="font-medium">{site.subdomain}.crownbidder.com</span> is ready to use</>
+              <>Your subdomain <span className="font-medium">{site.subdomain ? `${site.subdomain}.crownbidder.com` : 'Not configured'}</span> is ready to use</>
             )}
           </p>
         </div>
@@ -167,7 +168,7 @@ export default function VerifyDomainPage() {
         <div className="mb-8">
           <VerificationStatusIndicator
             status={site.domainVerificationStatus}
-            domain={site.customDomain || `${site.subdomain}.crownbidder.com`}
+            domain={site.customDomain || (site.subdomain ? `${site.subdomain}.crownbidder.com` : 'Domain not configured')}
           />
         </div>
 

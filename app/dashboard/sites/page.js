@@ -38,6 +38,9 @@ export default function SitesDashboardPage() {
       const sitesData = response?.data || response || [];
       const sitesArray = Array.isArray(sitesData) ? sitesData : [];
       
+      // Debug log to see what we're getting from the API
+      console.log('Sites API response:', sitesArray);
+      
       setSites(sitesArray);
     } catch (error) {
       console.error('Failed to load sites:', error);
@@ -154,7 +157,7 @@ export default function SitesDashboardPage() {
                       <div>
                         <p className="text-sm text-gray-600">Domain:</p>
                         <p className="text-sm font-medium text-gray-900">
-                          {site.customDomain || `${site.subdomain}.crownbidder.com`}
+                          {site.customDomain || (site.subdomain ? `${site.subdomain}.crownbidder.com` : 'Domain not configured')}
                         </p>
                       </div>
                       {site.description && (

@@ -157,6 +157,11 @@ export default function SiteCreationWizard({
         },
       };
 
+      console.log('Creating site with data:', siteData);
+      console.log('Domain type:', formData.domainType);
+      console.log('Subdomain value:', formData.subdomain);
+      console.log('Custom domain value:', formData.customDomain);
+
       const response = await api.sites.create(siteData);
       onSiteCreated(response.data);
     } catch (error) {
