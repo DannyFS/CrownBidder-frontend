@@ -35,6 +35,7 @@ export default function SiteCreationWizard({
     secondaryColor: '',
     
     // Step 3: Domain Setup
+    domainType: 'subdomain',
     customDomain: '',
     subdomain: '',
     agreeToTerms: false,
@@ -77,15 +78,18 @@ export default function SiteCreationWizard({
         break;
 
       case 'domain':
-        if (!formData.customDomain.trim()) {
-          stepErrors.customDomain = 'Custom domain is required';
-        } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.([a-zA-Z]{2,})$/.test(formData.customDomain)) {
-          stepErrors.customDomain = 'Please enter a valid domain (e.g., example.com)';
-        }
-        if (!formData.subdomain.trim()) {
-          stepErrors.subdomain = 'Subdomain is required';
-        } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*$/.test(formData.subdomain) || formData.subdomain.length < 3 || formData.subdomain.length > 20) {
-          stepErrors.subdomain = 'Subdomain must be 3-20 characters, alphanumeric only';
+        if (formData.domainType === 'custom') {
+          if (!formData.customDomain.trim()) {
+            stepErrors.customDomain = 'Custom domain is required';
+          } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.([a-zA-Z]{2,})$/.test(formData.customDomain)) {
+            stepErrors.customDomain = 'Please enter a valid domain (e.g., example.com)';
+          }
+        } else {
+          if (!formData.subdomain.trim()) {
+            stepErrors.subdomain = 'Subdomain is required';
+          } else if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*$/.test(formData.subdomain) || formData.subdomain.length < 3 || formData.subdomain.length > 20) {
+            stepErrors.subdomain = 'Subdomain must be 3-20 characters, alphanumeric only';
+          }
         }
         if (!formData.agreeToTerms) {
           stepErrors.agreeToTerms = 'You must agree to the terms of service';
@@ -140,8 +144,9 @@ export default function SiteCreationWizard({
         name: formData.siteName,
         description: formData.description,
         category: formData.category,
-        customDomain: formData.customDomain,
-        subdomain: formData.subdomain,
+        domainType: formData.domainType,
+        customDomain: formData.domainType === 'custom' ? formData.customDomain : '',
+        subdomain: formData.domainType === 'subdomain' ? formData.subdomain : '',
         ownerEmail: formData.ownerEmail,
         ownerPassword: formData.ownerPassword,
         theme: {
