@@ -37,7 +37,8 @@ export default function AuctionsDashboardPage() {
       
       // Load sites first
       const sitesResponse = await api.sites.list();
-      const sitesList = sitesResponse.data || [];
+      const sitesData = sitesResponse?.data || sitesResponse || [];
+      const sitesList = Array.isArray(sitesData) ? sitesData : [];
       setSites(sitesList);
       
       // Load auctions for all sites
@@ -47,7 +48,8 @@ export default function AuctionsDashboardPage() {
         for (const site of sitesList) {
           try {
             const auctionsResponse = await api.auctions.list(site._id);
-            const siteAuctions = (auctionsResponse.data || []).map(auction => ({
+            const auctionsData = auctionsResponse?.data || auctionsResponse || [];
+            const siteAuctions = (Array.isArray(auctionsData) ? auctionsData : []).map(auction => ({
               ...auction,
               siteName: site.name,
               siteId: site._id
@@ -63,6 +65,8 @@ export default function AuctionsDashboardPage() {
     } catch (error) {
       console.error('Failed to load data:', error);
       setError('Failed to load auctions. Please try again.');
+      setSites([]);
+      setAuctions([]);
     } finally {
       setLoading(false);
     }
@@ -103,8 +107,8 @@ export default function AuctionsDashboardPage() {
   };
 
   const filteredAuctions = selectedSite === 'all' 
-    ? auctions 
-    : auctions.filter(auction => auction.siteId === selectedSite);
+    ? (Array.isArray(auctions) ? auctions : [])
+    : (Array.isArray(auctions) ? auctions.filter(auction => auction.siteId === selectedSite) : []);
 
   if (isLoading) {
     return (
@@ -130,7 +134,7 @@ export default function AuctionsDashboardPage() {
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">My Auctions</h1>
             </div>
-            {sites.length > 0 && (
+            {Array.isArray(sites) && sites.length > 0 && (
               <div className="flex items-center space-x-4">
                 <select
                   value={selectedSite}
@@ -138,7 +142,7 @@ export default function AuctionsDashboardPage() {
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm"
                 >
                   <option value="all">All Sites</option>
-                  {sites.map(site => (
+                  {Array.isArray(sites) && sites.map(site => (
                     <option key={site._id} value={site._id}>
                       {site.name}
                     </option>
@@ -168,7 +172,7 @@ export default function AuctionsDashboardPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-gray-600">Loading your auctions...</p>
           </div>
-        ) : sites.length === 0 ? (
+        ) : !Array.isArray(sites) || sites.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🏢</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No Sites Found</h2>
@@ -203,8 +207,8 @@ export default function AuctionsDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-gray-600">
-                {filteredAuctions.length} {filteredAuctions.length === 1 ? 'auction' : 'auctions'} found
-                {selectedSite !== 'all' && (
+                {Array.isArray(filteredAuctions) ? filteredAuctions.length : 0} {Array.isArray(filteredAuctions) && filteredAuctions.length === 1 ? 'auction' : 'auctions'} found
+                {selectedSite !== 'all' && Array.isArray(sites) && (
                   <span className="ml-1">
                     for {sites.find(s => s._id === selectedSite)?.name}
                   </span>
@@ -213,7 +217,7 @@ export default function AuctionsDashboardPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredAuctions.map((auction) => (
+              {Array.isArray(filteredAuctions) && filteredAuctions.map((auction) => (
                 <Card key={auction._id} className="hover:shadow-lg transition-shadow">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">

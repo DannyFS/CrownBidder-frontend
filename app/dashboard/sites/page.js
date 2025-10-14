@@ -33,10 +33,16 @@ export default function SitesDashboardPage() {
     try {
       setLoading(true);
       const response = await api.sites.list();
-      setSites(response.data || []);
+      
+      // Ensure we always have an array
+      const sitesData = response?.data || response || [];
+      const sitesArray = Array.isArray(sitesData) ? sitesData : [];
+      
+      setSites(sitesArray);
     } catch (error) {
       console.error('Failed to load sites:', error);
       setError('Failed to load sites. Please try again.');
+      setSites([]); // Ensure sites is always an array even on error
     } finally {
       setLoading(false);
     }
@@ -112,7 +118,7 @@ export default function SitesDashboardPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-gray-600">Loading your sites...</p>
           </div>
-        ) : sites.length === 0 ? (
+        ) : !Array.isArray(sites) || sites.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🏢</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No Sites Yet</h2>
@@ -127,12 +133,12 @@ export default function SitesDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-gray-600">
-                {sites.length} {sites.length === 1 ? 'site' : 'sites'} found
+                {Array.isArray(sites) ? sites.length : 0} {Array.isArray(sites) && sites.length === 1 ? 'site' : 'sites'} found
               </p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {sites.map((site) => (
+              {Array.isArray(sites) && sites.map((site) => (
                 <Card key={site._id} className="hover:shadow-lg transition-shadow">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
