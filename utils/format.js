@@ -82,17 +82,17 @@ export function formatPercentage(value, decimals = 1) {
 
 // Capitalize first letter
 export function capitalize(text) {
-  if (!text) return '';
+  if (!text || typeof text !== 'string') return '';
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 }
 
 // Convert to title case
 export function toTitleCase(text) {
-  if (!text) return '';
+  if (!text || typeof text !== 'string') return '';
   return text
     .toLowerCase()
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => word && word.length > 0 ? word.charAt(0).toUpperCase() + word.slice(1) : '')
     .join(' ');
 }
 
