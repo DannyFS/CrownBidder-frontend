@@ -83,15 +83,15 @@ export default async function SubdomainAuctionsPage({ params }) {
               <p className="text-gray-600 mb-6">
                 There are currently no live auctions. Check back soon for exciting new items!
               </p>
-              <button 
-                className="text-white px-6 py-3 rounded-lg font-semibold transition"
+              <a 
+                href="/register"
+                className="inline-block text-white px-6 py-3 rounded-lg font-semibold transition"
                 style={{
                   backgroundColor: tenant?.settings?.primaryColor || '#1e40af'
                 }}
-                onClick={() => window.location.href = '/register'}
               >
                 Register for Updates
-              </button>
+              </a>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -143,15 +143,15 @@ export default async function SubdomainAuctionsPage({ params }) {
                     </div>
 
                     <div className="flex space-x-2">
-                      <button 
-                        className="flex-1 text-white py-2 px-4 rounded-lg text-sm font-semibold transition"
+                      <a 
+                        href={`/auctions/${auction._id}`}
+                        className="flex-1 block text-center text-white py-2 px-4 rounded-lg text-sm font-semibold transition"
                         style={{
                           backgroundColor: tenant?.settings?.primaryColor || '#1e40af'
                         }}
-                        onClick={() => window.location.href = `/auctions/${auction._id}`}
                       >
                         {auction.status === 'live' ? 'Join Auction' : 'View Details'}
-                      </button>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -170,15 +170,15 @@ export default async function SubdomainAuctionsPage({ params }) {
               <p className="text-xl text-gray-600 mb-8">
                 Register now to participate in all current and upcoming auctions.
               </p>
-              <button 
-                className="text-white px-8 py-4 rounded-lg text-lg font-semibold transition"
+              <a 
+                href="/register"
+                className="inline-block text-white px-8 py-4 rounded-lg text-lg font-semibold transition"
                 style={{
                   backgroundColor: tenant?.settings?.primaryColor || '#1e40af'
                 }}
-                onClick={() => window.location.href = '/register'}
               >
                 Register to Bid
-              </button>
+              </a>
             </div>
           </div>
         </div>

@@ -45,18 +45,18 @@ export default async function SubdomainHomePage({ params }) {
               {tenant.description || 'Your premier destination for live auctions'}
             </p>
             <div className="space-x-4">
-              <button 
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
-                onClick={() => window.location.href = `/auctions`}
+              <a 
+                href="/auctions"
+                className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
               >
                 View Live Auctions
-              </button>
-              <button 
-                className="border border-blue-600 text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-50 transition"
-                onClick={() => window.location.href = `/register`}
+              </a>
+              <a 
+                href="/register"
+                className="inline-block border border-blue-600 text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-50 transition"
               >
                 Register to Bid
-              </button>
+              </a>
             </div>
           </div>
         </section>
@@ -116,12 +116,12 @@ export default async function SubdomainHomePage({ params }) {
             <p className="text-xl text-gray-600 mb-8">
               Join thousands of satisfied bidders and discover amazing items at great prices.
             </p>
-            <button 
-              className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
-              onClick={() => window.location.href = `/register`}
+            <a 
+              href="/register"
+              className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
             >
               Create Your Account Today
-            </button>
+            </a>
           </div>
         </section>
       </div>
