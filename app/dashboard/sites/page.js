@@ -39,7 +39,8 @@ export default function SitesDashboardPage() {
       const sitesArray = Array.isArray(sitesData) ? sitesData : [];
       
       // Debug log to see what we're getting from the API
-      console.log('Sites API response:', sitesArray);
+      console.log('Sites API response structure:', response);
+      console.log('Sites array:', sitesArray);
       
       setSites(sitesArray);
     } catch (error) {

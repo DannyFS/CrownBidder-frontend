@@ -37,7 +37,9 @@ export default function VerifyDomainPage() {
         setLoading(true);
         const response = await api.sites.get(siteId);
         console.log('Site data from API:', response.data);
-        setSite(response.data);
+        // The site data is nested under response.data.site
+        const siteData = response.data.site || response.data;
+        setSite(siteData);
       } catch (error) {
         setError(error.message);
         console.error('Failed to load site:', error);
