@@ -240,42 +240,7 @@ export default function VerifyDomainPage() {
               </Button>
             </div>
           </>
-        )}
-
-        {/* Help Section - Only for custom domains */}
-        {site.customDomain && !isVerified && (
-          <div className="mt-12">
-              <Card>
-                <div className="p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Need Help?
-                  </h3>
-                  <div className="space-y-4 text-sm text-gray-600">
-                    <div>
-                      <h4 className="font-medium text-gray-900">Common Issues:</h4>
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>DNS changes can take 5-15 minutes to propagate globally</li>
-                        <li>Make sure you're updating the correct domain (not a subdomain)</li>
-                        <li>Remove any existing A or CNAME records for your domain first</li>
-                        <li>Contact your domain provider if you're having trouble finding DNS settings</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Still Having Issues?</h4>
-                      <p className="mt-1">
-                        Contact our support team at{' '}
-                        <a href="mailto:support@crownbidder.com" className="text-blue-600 hover:text-blue-500">
-                          support@crownbidder.com
-                        </a>{' '}
-                        with your domain name and we'll help you get set up.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </>
-        ) : (
+        ) : isVerified ? (
           /* Success State */
           <div className="text-center">
             <div className="mb-8">
@@ -315,6 +280,46 @@ export default function VerifyDomainPage() {
                 View Live Site
               </Button>
             </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <Button onClick={handleContinue}>
+              Continue to Dashboard
+            </Button>
+          </div>
+        )}
+
+        {/* Help Section - Only for custom domains */}
+        {site.customDomain && !isVerified && (
+          <div className="mt-12">
+            <Card>
+              <div className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Need Help?
+                </h3>
+                <div className="space-y-4 text-sm text-gray-600">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Common Issues:</h4>
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>DNS changes can take 5-15 minutes to propagate globally</li>
+                      <li>Make sure you're updating the correct domain (not a subdomain)</li>
+                      <li>Remove any existing A or CNAME records for your domain first</li>
+                      <li>Contact your domain provider if you're having trouble finding DNS settings</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Still Having Issues?</h4>
+                    <p className="mt-1">
+                      Contact our support team at{' '}
+                      <a href="mailto:support@crownbidder.com" className="text-blue-600 hover:text-blue-500">
+                        support@crownbidder.com
+                      </a>{' '}
+                      with your domain name and we'll help you get set up.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
       </div>
