@@ -155,7 +155,11 @@ export default function VerifyDomainPage() {
             Domain Verification
           </h1>
           <p className="mt-2 text-lg text-gray-600">
-            Configure DNS settings for <span className="font-medium">{site.customDomain}</span>
+            {site.customDomain ? (
+              <>Configure DNS settings for <span className="font-medium">{site.customDomain}</span></>
+            ) : (
+              <>Your subdomain <span className="font-medium">{site.subdomain}.crownbidder.com</span> is ready to use</>
+            )}
           </p>
         </div>
 
@@ -163,13 +167,13 @@ export default function VerifyDomainPage() {
         <div className="mb-8">
           <VerificationStatusIndicator
             status={site.domainVerificationStatus}
-            domain={site.customDomain}
+            domain={site.customDomain || `${site.subdomain}.crownbidder.com`}
           />
         </div>
 
-        {!isVerified ? (
+        {!isVerified && site.customDomain ? (
           <>
-            {/* DNS Instructions */}
+            {/* DNS Instructions for Custom Domain */}
             <div className="mb-8">
               <DomainVerificationInstructions
                 domain={site.customDomain}
@@ -194,9 +198,53 @@ export default function VerifyDomainPage() {
                 Back to Dashboard
               </Button>
             </div>
+          </>
+        ) : !isVerified && site.subdomain ? (
+          <>
+            {/* Subdomain Ready Message */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Your Subdomain is Ready!
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Your auction site is live at{' '}
+                <a 
+                  href={`https://${site.subdomain}.crownbidder.com`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  {site.subdomain}.crownbidder.com
+                </a>
+              </p>
+            </div>
 
-            {/* Help Section */}
-            <div className="mt-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                onClick={handleContinue}
+                className="min-w-[160px]"
+              >
+                Go to Site Dashboard
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => window.open(`https://${site.subdomain}.crownbidder.com`, '_blank')}
+              >
+                View Live Site
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Help Section - Only for custom domains */}
+        {site.customDomain && !isVerified && (
+          <div className="mt-12">
               <Card>
                 <div className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -242,12 +290,12 @@ export default function VerifyDomainPage() {
               <p className="text-gray-600 mb-6">
                 Your auction site is now live at{' '}
                 <a 
-                  href={`https://${site.customDomain}`}
+                  href={`https://${site.customDomain || `${site.subdomain}.crownbidder.com`}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                  {site.customDomain}
+                  {site.customDomain || `${site.subdomain}.crownbidder.com`}
                 </a>
               </p>
             </div>
@@ -262,7 +310,7 @@ export default function VerifyDomainPage() {
               
               <Button
                 variant="outline"
-                onClick={() => window.open(`https://${site.customDomain}`, '_blank')}
+                onClick={() => window.open(`https://${site.customDomain || `${site.subdomain}.crownbidder.com`}`, '_blank')}
               >
                 View Live Site
               </Button>

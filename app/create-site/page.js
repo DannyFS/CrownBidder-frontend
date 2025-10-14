@@ -10,6 +10,7 @@ export default function CreateSitePage() {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -22,8 +23,25 @@ export default function CreateSitePage() {
   }
 
   const handleSiteCreated = (siteData) => {
+    console.log('Site created successfully:', siteData);
+    
+    // Safely access the site ID
+    const siteId = siteData?.site?._id || siteData?._id;
+    
+    if (!siteId) {
+      console.error('No site ID found in response:', siteData);
+      setErrors({ submit: 'Site created but missing ID. Please contact support.' });
+      return;
+    }
+    
     // Redirect to domain verification page
-    router.push(`/site/${siteData.site._id}/verify-domain`);
+    try {
+      router.push(`/site/${String(siteId)}/verify-domain`);
+    } catch (routerError) {
+      console.error('Router error:', routerError);
+      // Fallback to dashboard if routing fails
+      router.push('/dashboard');
+    }
   };
 
   const handleCancel = () => {

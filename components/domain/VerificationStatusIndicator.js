@@ -125,7 +125,7 @@ export default function VerificationStatusIndicator({ status, domain }) {
         <div className="flex items-center justify-between text-xs">
           <span className={config.descColor}>Domain: {domain}</span>
           <span className={config.descColor}>
-            Status: {status.charAt(0).toUpperCase() + status.slice(1)}
+            Status: {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'}
           </span>
         </div>
       </div>

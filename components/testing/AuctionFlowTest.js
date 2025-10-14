@@ -129,7 +129,7 @@ export default function AuctionFlowTest() {
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-200 text-gray-600'
                     }`}>
-                      {isCompleted ? '✓' : scenario.id.charAt(0).toUpperCase()}
+                      {isCompleted ? '✓' : (scenario.id ? scenario.id.charAt(0).toUpperCase() : '?')}
                     </div>
                     <div>
                       <h3 className={`font-medium ${
