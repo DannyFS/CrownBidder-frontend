@@ -57,6 +57,16 @@ export async function middleware(request) {
   // Extract subdomain using Vercel patterns
   const subdomain = extractSubdomain(request);
 
+  // Debug logging for production troubleshooting
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Middleware debug:', {
+      url: request.url,
+      host: request.headers.get('host'),
+      subdomain,
+      pathname
+    });
+  }
+
   if (!subdomain) {
     // Main platform domain - serve platform routes normally
     return handlePlatformRouting(request);
