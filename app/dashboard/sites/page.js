@@ -32,10 +32,22 @@ export default function SitesDashboardPage() {
   const loadSites = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear any previous errors
+      console.log('Loading sites for user:', user?.email);
       const response = await api.sites.list();
       
-      // Ensure we always have an array
-      const sitesData = response?.data || response || [];
+      // Check if sites data is nested or direct
+      let sitesData;
+      if (response?.data?.sites) {
+        // If sites are nested under response.data.sites
+        sitesData = response.data.sites;
+      } else if (Array.isArray(response?.data)) {
+        // If sites are directly in response.data array
+        sitesData = response.data;
+      } else {
+        // Fallback
+        sitesData = response || [];
+      }
       const sitesArray = Array.isArray(sitesData) ? sitesData : [];
       
       // Debug log to see what we're getting from the API
@@ -45,7 +57,12 @@ export default function SitesDashboardPage() {
       setSites(sitesArray);
     } catch (error) {
       console.error('Failed to load sites:', error);
-      setError('Failed to load sites. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        code: error.code
+      });
+      setError(`Failed to load sites: ${error.message}`);
       setSites([]); // Ensure sites is always an array even on error
     } finally {
       setLoading(false);
@@ -102,9 +119,14 @@ export default function SitesDashboardPage() {
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">My Sites</h1>
             </div>
-            <Link href="/create-site">
-              <Button>Create New Site</Button>
-            </Link>
+            <div className="flex space-x-2">
+              <Button onClick={loadSites} variant="outline">
+                Refresh
+              </Button>
+              <Link href="/create-site">
+                <Button>Create New Site</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>

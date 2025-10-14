@@ -163,6 +163,11 @@ export default function SiteCreationWizard({
       console.log('Custom domain value:', formData.customDomain);
 
       const response = await api.sites.create(siteData);
+      
+      // IMPORTANT: Don't update the token from site creation
+      // The response includes a site owner token, but we want to stay as platform user
+      console.log('Site creation response:', response.data);
+      
       onSiteCreated(response.data);
     } catch (error) {
       setErrors({ submit: error.message });
