@@ -1,17 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import api from '@/lib/api';
 
 export default function TenantHeader({ tenant }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const navigation = [
+  const [navigation, setNavigation] = useState([
     { name: 'Home', href: '/' },
     { name: 'Auctions', href: '/auctions' },
-    { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
-  ];
+  ]);
+
+  useEffect(() => {
+    if (!tenant) return;
+
+    const fetchNavigation = async () => {
+      try {
+        const response = await api.pages.getNavigation();
+        const pages = response.data.pages || [];
+
+        // Map pages to navigation items
+        const navItems = pages.map(page => ({
+          name: page.navigation?.navLabel || page.title,
+          href: page.slug === 'home' ? '/' : `/${page.slug}`,
+          order: page.navigation?.navOrder || 0
+        }));
+
+        // Sort by order
+        navItems.sort((a, b) => a.order - b.order);
+
+        // If no pages found, use default navigation
+        if (navItems.length > 0) {
+          setNavigation(navItems);
+        }
+      } catch (error) {
+        console.error('Failed to fetch navigation:', error);
+        // Keep default navigation on error
+      }
+    };
+
+    fetchNavigation();
+  }, [tenant]);
 
   return (
     <header className="bg-white shadow-sm">

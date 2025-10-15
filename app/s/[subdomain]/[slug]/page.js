@@ -10,7 +10,7 @@ async function getTenant(subdomain) {
       headers: {
         'Content-Type': 'application/json',
       },
-      cache: 'no-store' // Always fetch fresh data for tenant resolution
+      cache: 'no-store'
     });
 
     if (!response.ok) {
@@ -25,8 +25,8 @@ async function getTenant(subdomain) {
   }
 }
 
-export default async function SubdomainHomePage({ params }) {
-  const { subdomain } = await params;
+export default async function SubdomainDynamicPage({ params }) {
+  const { subdomain, slug } = await params;
   const tenant = await getTenant(subdomain);
 
   if (!tenant) {
@@ -35,7 +35,7 @@ export default async function SubdomainHomePage({ params }) {
 
   return (
     <TenantLayout tenant={tenant}>
-      <DynamicPageClient pageSlug="home" />
+      <DynamicPageClient pageSlug={slug} />
     </TenantLayout>
   );
 }
