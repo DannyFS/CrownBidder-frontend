@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import BasicInformationStep from './steps/BasicInformationStep';
+import LayoutSelectionStep from './steps/LayoutSelectionStep';
 import BrandingStep from './steps/BrandingStep';
 import DomainSetupStep from './steps/DomainSetupStep';
 import OwnerAccountStep from './steps/OwnerAccountStep';
@@ -10,7 +11,8 @@ import api from '@/lib/api';
 
 const STEPS = [
   { id: 'basic', title: 'Basic Information', component: BasicInformationStep },
-  { id: 'branding', title: 'Branding', component: BrandingStep },
+  { id: 'layout', title: 'Layout', component: LayoutSelectionStep },
+  { id: 'branding', title: 'Branding & Colors', component: BrandingStep },
   { id: 'domain', title: 'Domain Setup', component: DomainSetupStep },
   { id: 'account', title: 'Owner Account', component: OwnerAccountStep },
 ];
@@ -27,20 +29,25 @@ export default function SiteCreationWizard({
     siteName: '',
     description: '',
     category: '',
-    
-    // Step 2: Branding
+
+    // Step 2: Layout Selection
+    layoutName: null,
+    selectedLayout: null,
+
+    // Step 3: Branding
     logoUrl: '',
     selectedTheme: '',
     primaryColor: '',
     secondaryColor: '',
-    
-    // Step 3: Domain Setup
+    accentColor: '',
+
+    // Step 4: Domain Setup
     domainType: 'subdomain',
     customDomain: '',
     subdomain: '',
     agreeToTerms: false,
-    
-    // Step 4: Owner Account
+
+    // Step 5: Owner Account
     ownerEmail: '',
     ownerPassword: '',
     confirmPassword: '',
@@ -71,9 +78,14 @@ export default function SiteCreationWizard({
         }
         break;
 
+      case 'layout':
+        // Layout is optional, so no validation needed
+        break;
+
       case 'branding':
-        if (!formData.selectedTheme) {
-          stepErrors.selectedTheme = 'Please select a theme';
+        // Theme is now optional if a layout was selected
+        if (!formData.layoutName && !formData.selectedTheme) {
+          stepErrors.selectedTheme = 'Please select a theme or go back to choose a layout';
         }
         break;
 
@@ -149,10 +161,17 @@ export default function SiteCreationWizard({
         subdomain: formData.domainType === 'subdomain' ? formData.subdomain : '',
         ownerEmail: formData.ownerEmail,
         ownerPassword: formData.ownerPassword,
+        layoutName: formData.layoutName || undefined,
+        customColors: formData.layoutName ? {
+          primary: formData.primaryColor,
+          secondary: formData.secondaryColor,
+          accent: formData.accentColor,
+        } : undefined,
         theme: {
-          selectedTheme: formData.selectedTheme,
+          selectedTheme: formData.selectedTheme || 'classic-blue',
           primaryColor: formData.primaryColor,
           secondaryColor: formData.secondaryColor,
+          accentColor: formData.accentColor,
           logoUrl: formData.logoUrl,
         },
       };

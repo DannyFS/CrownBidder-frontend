@@ -54,6 +54,9 @@ export default function BrandingStep({ formData, updateFormData, errors }) {
   const [logoPreview, setLogoPreview] = useState(formData.logoUrl || null);
   const fileInputRef = useRef(null);
 
+  // Check if a layout was selected
+  const hasLayout = formData.layoutName && formData.selectedLayout;
+
   const handleThemeSelect = (theme) => {
     updateFormData({
       selectedTheme: theme.id,
@@ -112,6 +115,25 @@ export default function BrandingStep({ formData, updateFormData, errors }) {
 
   return (
     <div className="space-y-8">
+      {/* Layout Info Banner */}
+      {hasLayout && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900">
+                Layout: {formData.selectedLayout.displayName}
+              </p>
+              <p className="text-sm text-blue-700 mt-1">
+                Customize the colors for your selected layout. You can add a logo and fine-tune your branding.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Logo Upload */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-4">
@@ -165,54 +187,56 @@ export default function BrandingStep({ formData, updateFormData, errors }) {
         </div>
       </div>
 
-      {/* Theme Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-4">
-          Choose a Theme *
-        </label>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              onClick={() => handleThemeSelect(theme)}
-              className={`
-                p-4 border-2 rounded-lg text-left transition-all hover:shadow-md
-                ${formData.selectedTheme === theme.id 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
-                }
-              `}
-            >
-              <div className="flex items-center space-x-3 mb-3">
-                <div 
-                  className="w-6 h-6 rounded-full border"
-                  style={{ backgroundColor: theme.primaryColor }}
-                />
-                <div 
-                  className="w-6 h-6 rounded-full border"
-                  style={{ backgroundColor: theme.secondaryColor }}
-                />
-                <span className="font-medium text-gray-900">{theme.name}</span>
-              </div>
-              <p className="text-sm text-gray-600">{theme.preview}</p>
-            </button>
-          ))}
-        </div>
-        
-        {errors.selectedTheme && (
-          <p className="mt-2 text-sm text-red-600">{errors.selectedTheme}</p>
-        )}
-      </div>
-
-      {/* Custom Colors */}
-      {selectedTheme && (
+      {/* Theme Selection - Only show if no layout selected */}
+      {!hasLayout && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-4">
-            Custom Colors (Optional)
+            Choose a Theme *
           </label>
-          
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                onClick={() => handleThemeSelect(theme)}
+                className={`
+                  p-4 border-2 rounded-lg text-left transition-all hover:shadow-md
+                  ${formData.selectedTheme === theme.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                  }
+                `}
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  <div
+                    className="w-6 h-6 rounded-full border"
+                    style={{ backgroundColor: theme.primaryColor }}
+                  />
+                  <div
+                    className="w-6 h-6 rounded-full border"
+                    style={{ backgroundColor: theme.secondaryColor }}
+                  />
+                  <span className="font-medium text-gray-900">{theme.name}</span>
+                </div>
+                <p className="text-sm text-gray-600">{theme.preview}</p>
+              </button>
+            ))}
+          </div>
+
+          {errors.selectedTheme && (
+            <p className="mt-2 text-sm text-red-600">{errors.selectedTheme}</p>
+          )}
+        </div>
+      )}
+
+      {/* Custom Colors */}
+      {(selectedTheme || hasLayout) && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-4">
+            {hasLayout ? 'Customize Layout Colors' : 'Custom Colors (Optional)'}
+          </label>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
@@ -221,20 +245,20 @@ export default function BrandingStep({ formData, updateFormData, errors }) {
               <div className="flex items-center space-x-3">
                 <input
                   type="color"
-                  value={formData.primaryColor || selectedTheme.primaryColor}
+                  value={formData.primaryColor || (hasLayout ? formData.selectedLayout.suggestedColors.primary : selectedTheme?.primaryColor)}
                   onChange={(e) => handleColorChange('primaryColor', e.target.value)}
                   className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                 />
                 <input
                   type="text"
-                  value={formData.primaryColor || selectedTheme.primaryColor}
+                  value={formData.primaryColor || (hasLayout ? formData.selectedLayout.suggestedColors.primary : selectedTheme?.primaryColor)}
                   onChange={(e) => handleColorChange('primaryColor', e.target.value)}
                   placeholder="#1e40af"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">
                 Secondary Color
@@ -242,21 +266,44 @@ export default function BrandingStep({ formData, updateFormData, errors }) {
               <div className="flex items-center space-x-3">
                 <input
                   type="color"
-                  value={formData.secondaryColor || selectedTheme.secondaryColor}
+                  value={formData.secondaryColor || (hasLayout ? formData.selectedLayout.suggestedColors.secondary : selectedTheme?.secondaryColor)}
                   onChange={(e) => handleColorChange('secondaryColor', e.target.value)}
                   className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                 />
                 <input
                   type="text"
-                  value={formData.secondaryColor || selectedTheme.secondaryColor}
+                  value={formData.secondaryColor || (hasLayout ? formData.selectedLayout.suggestedColors.secondary : selectedTheme?.secondaryColor)}
                   onChange={(e) => handleColorChange('secondaryColor', e.target.value)}
                   placeholder="#64748b"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
+
+            {hasLayout && formData.selectedLayout.suggestedColors.accent && (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Accent Color
+                </label>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="color"
+                    value={formData.accentColor || formData.selectedLayout.suggestedColors.accent}
+                    onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={formData.accentColor || formData.selectedLayout.suggestedColors.accent}
+                    onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                    placeholder="#f59e0b"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
-          
+
           <p className="mt-3 text-sm text-gray-500">
             Colors will be applied to buttons, links, and other branded elements
           </p>
@@ -264,14 +311,14 @@ export default function BrandingStep({ formData, updateFormData, errors }) {
       )}
 
       {/* Theme Preview */}
-      {selectedTheme && (
+      {(selectedTheme || hasLayout) && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Preview</h3>
-          <div 
+          <div
             className="bg-white rounded-lg shadow-sm p-6 border"
             style={{
-              '--primary-color': formData.primaryColor || selectedTheme.primaryColor,
-              '--secondary-color': formData.secondaryColor || selectedTheme.secondaryColor,
+              '--primary-color': formData.primaryColor || (hasLayout ? formData.selectedLayout.suggestedColors.primary : selectedTheme?.primaryColor),
+              '--secondary-color': formData.secondaryColor || (hasLayout ? formData.selectedLayout.suggestedColors.secondary : selectedTheme?.secondaryColor),
             }}
           >
             <div className="flex items-center justify-between mb-4">
