@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import LayoutThumbnail from '@/components/layout/LayoutThumbnail';
 
 const CATEGORY_LABELS = {
   modern: 'Modern',
@@ -146,82 +147,90 @@ export default function LayoutSelectionStep({ formData, updateFormData, errors }
             type="button"
             onClick={() => handleLayoutSelect(layout)}
             className={`
-              text-left border-2 rounded-lg p-6 transition-all hover:shadow-lg
+              text-left border-2 rounded-lg overflow-hidden transition-all hover:shadow-lg
               ${formData.layoutName === layout.name
                 ? 'border-blue-500 bg-blue-50 shadow-md'
                 : 'border-gray-200 hover:border-blue-300'
               }
             `}
           >
-            {/* Layout Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900">
-                  {layout.displayName}
-                </h4>
-                <span className="inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                  {CATEGORY_LABELS[layout.category] || layout.category}
-                </span>
-              </div>
+            {/* Layout Thumbnail */}
+            <div className="relative">
+              <LayoutThumbnail layout={layout} />
               {formData.layoutName === layout.name && (
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <div className="absolute top-2 right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
             </div>
 
-            {/* Description */}
-            <p className="text-sm text-gray-600 mb-4">
-              {layout.description}
-            </p>
-
-            {/* Color Preview */}
-            <div className="mb-4">
-              <p className="text-xs font-medium text-gray-500 mb-2">Suggested Colors:</p>
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-8 h-8 rounded border-2 border-gray-200"
-                  style={{ backgroundColor: layout.suggestedColors.primary }}
-                  title="Primary"
-                />
-                <div
-                  className="w-8 h-8 rounded border-2 border-gray-200"
-                  style={{ backgroundColor: layout.suggestedColors.secondary }}
-                  title="Secondary"
-                />
-                {layout.suggestedColors.accent && (
-                  <div
-                    className="w-8 h-8 rounded border-2 border-gray-200"
-                    style={{ backgroundColor: layout.suggestedColors.accent }}
-                    title="Accent"
-                  />
-                )}
+            {/* Layout Info */}
+            <div className="p-4">
+              {/* Layout Header */}
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">
+                    {layout.displayName}
+                  </h4>
+                  <span className="inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                    {CATEGORY_LABELS[layout.category] || layout.category}
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Features */}
-            {layout.features && layout.features.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Features:</p>
-                <div className="flex flex-wrap gap-1">
-                  {layout.features.slice(0, 4).map((feature) => (
-                    <span
-                      key={feature}
-                      className="inline-block px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600"
-                    >
-                      {feature.replace('-', ' ')}
-                    </span>
-                  ))}
-                  {layout.features.length > 4 && (
-                    <span className="inline-block px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">
-                      +{layout.features.length - 4} more
-                    </span>
+              {/* Description */}
+              <p className="text-sm text-gray-600 mb-3">
+                {layout.description}
+              </p>
+
+              {/* Color Preview */}
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-500 mb-2">Colors:</p>
+                <div className="flex items-center space-x-2">
+                  <div
+                    className="w-6 h-6 rounded border-2 border-gray-200 shadow-sm"
+                    style={{ backgroundColor: layout.suggestedColors.primary }}
+                    title="Primary"
+                  />
+                  <div
+                    className="w-6 h-6 rounded border-2 border-gray-200 shadow-sm"
+                    style={{ backgroundColor: layout.suggestedColors.secondary }}
+                    title="Secondary"
+                  />
+                  {layout.suggestedColors.accent && (
+                    <div
+                      className="w-6 h-6 rounded border-2 border-gray-200 shadow-sm"
+                      style={{ backgroundColor: layout.suggestedColors.accent }}
+                      title="Accent"
+                    />
                   )}
                 </div>
               </div>
-            )}
+
+              {/* Features */}
+              {layout.features && layout.features.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-2">Features:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {layout.features.slice(0, 3).map((feature) => (
+                      <span
+                        key={feature}
+                        className="inline-block px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600"
+                      >
+                        {feature.replace('-', ' ')}
+                      </span>
+                    ))}
+                    {layout.features.length > 3 && (
+                      <span className="inline-block px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-600">
+                        +{layout.features.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </button>
         ))}
       </div>
