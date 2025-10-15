@@ -68,50 +68,58 @@ export default function LayoutThumbnail({ layout }) {
     ),
 
     'classic-elegant': (
-      <div className="w-full h-full bg-gray-50">
-        {/* Navbar */}
-        <div className="h-8 bg-white border-b flex items-center justify-center px-3">
-          <div className="flex gap-3">
-            <div className="w-8 h-3 bg-gray-300 rounded"></div>
-            <div className="w-8 h-3 bg-gray-300 rounded"></div>
-            <div className="w-8 h-3 bg-gray-300 rounded"></div>
-          </div>
-        </div>
-
-        {/* Hero with Image Background */}
+      <div className="w-full h-full bg-gray-50 flex">
+        {/* Vertical Sidebar Navigation (LEFT SIDE) */}
         <div
-          className="h-28 flex flex-col items-center justify-center px-4 relative"
-          style={{ backgroundColor: suggestedColors.secondary + '40' }}
+          className="w-12 border-r flex flex-col items-center py-2 gap-2"
+          style={{ backgroundColor: suggestedColors.primary }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/10"></div>
-          <div className="relative z-10 text-center">
-            <div className="w-28 h-4 bg-gray-800/80 rounded mx-auto mb-2"></div>
-            <div className="w-36 h-3 bg-gray-700/70 rounded mx-auto"></div>
+          <div className="w-8 h-6 bg-white/40 rounded mb-2"></div>
+          <div className="w-8 h-2 bg-white/30 rounded"></div>
+          <div className="w-8 h-2 bg-white/30 rounded"></div>
+          <div className="w-8 h-2 bg-white/30 rounded"></div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1">
+          {/* Hero - LEFT ALIGNED */}
+          <div
+            className="h-28 flex flex-col justify-center px-4"
+            style={{ backgroundColor: suggestedColors.primary }}
+          >
+            <div className="w-24 h-4 bg-white rounded mb-2"></div>
+            <div className="w-32 h-3 bg-white/80 rounded mb-3"></div>
+            <div
+              className="w-16 h-5 rounded"
+              style={{ backgroundColor: suggestedColors.accent }}
+            ></div>
           </div>
-        </div>
 
-        {/* Welcome Text */}
-        <div className="p-4 bg-white">
-          <div className="w-24 h-3 bg-gray-800 rounded mx-auto mb-2"></div>
-          <div className="w-full h-2 bg-gray-200 rounded mb-1"></div>
-          <div className="w-5/6 h-2 bg-gray-200 rounded mx-auto"></div>
-        </div>
-
-        {/* Auction Cards */}
-        <div className="px-3 pb-3 grid grid-cols-2 gap-3">
-          {[1, 2].map(i => (
-            <div key={i} className="bg-white border-2 rounded-lg p-2">
-              <div className="w-full h-16 bg-gray-100 rounded mb-2"></div>
-              <div className="space-y-1">
-                <div className="w-full h-2 bg-gray-200 rounded"></div>
-                <div className="w-3/4 h-2 bg-gray-200 rounded"></div>
+          {/* Stats Section */}
+          <div className="p-3 bg-white flex justify-around">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="text-center">
                 <div
-                  className="w-12 h-3 rounded mt-2"
+                  className="w-10 h-4 rounded mx-auto mb-1"
                   style={{ backgroundColor: suggestedColors.primary }}
                 ></div>
+                <div className="w-10 h-1.5 bg-gray-200 rounded"></div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* List Layout */}
+          <div className="px-3 pb-3 space-y-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white border-2 rounded p-2 flex gap-2">
+                <div className="w-16 h-12 bg-gray-100 rounded"></div>
+                <div className="flex-1 space-y-1">
+                  <div className="w-full h-2 bg-gray-200 rounded"></div>
+                  <div className="w-2/3 h-2 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     ),
