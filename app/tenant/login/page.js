@@ -74,15 +74,23 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      await login(formData.email, formData.password, formData.rememberMe);
-      
-      // Redirect to intended page or homepage
-      const redirect = new URLSearchParams(window.location.search).get('redirect');
-      router.push(redirect || '/');
+      // Use tenant login (not platform login)
+      const credentials = {
+        email: formData.email,
+        password: formData.password
+      };
+
+      const result = await login(credentials, false); // isPlatform = false for tenant login
+
+      if (result.success) {
+        // Redirect to intended page or homepage
+        const redirect = new URLSearchParams(window.location.search).get('redirect');
+        router.push(redirect || '/');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setErrors({
-        submit: error.response?.data?.message || 'Invalid email or password. Please try again.',
+        submit: error.message || 'Invalid email or password. Please try again.',
       });
     } finally {
       setIsSubmitting(false);

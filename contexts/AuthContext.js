@@ -67,14 +67,16 @@ export function AuthProvider({ children }) {
     initializeAuth();
   }, [initializeAuth]);
 
-  // Login function
-  const login = async (credentials) => {
+  // Login function (platform-level for site owners)
+  const login = async (credentials, isPlatform = true) => {
     try {
       setError(null);
       setIsLoading(true);
 
-      // Use platform login for main Crown Bidder site
-      const response = await api.auth.platformLogin(credentials);
+      // Use platform login for main Crown Bidder site, tenant login for tenant sites
+      const response = isPlatform
+        ? await api.auth.platformLogin(credentials)
+        : await api.auth.login(credentials);
       const { user: userData, token } = response.data;
 
       api.setToken(token);
@@ -90,14 +92,17 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Signup function
-  const signup = async (userData) => {
+  // Signup function for platform (creates site owner with admin role)
+  const signup = async (userData, isPlatform = true) => {
     try {
       setError(null);
       setIsLoading(true);
 
-      // Use platform signup for main Crown Bidder site
-      const response = await api.auth.platformSignup(userData);
+      // Use platform signup to create site owner (admin role)
+      // Use tenant signup to create regular user (bidder role)
+      const response = isPlatform
+        ? await api.auth.platformSignup(userData)
+        : await api.auth.signup(userData);
       const { user: newUser, token } = response.data;
 
       api.setToken(token);

@@ -100,7 +100,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -108,27 +108,27 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      // Register the user
+      // Register the user as a bidder (not an admin)
       const registerData = {
-        ...formData,
-        role: 'bidder',
-        siteId: site?._id,
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        address: formData.address,
       };
 
-      const response = await api.auth.register(registerData);
-      
-      if (response.token) {
-        // Auto-login after registration
-        await login(response.token, response.user);
-        
-        // Redirect to intended page or homepage
+      const response = await api.auth.signup(registerData);
+
+      if (response.success) {
+        // Redirect to homepage or intended page
         const redirect = new URLSearchParams(window.location.search).get('redirect');
         router.push(redirect || '/');
       }
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({
-        submit: error.response?.data?.message || 'Registration failed. Please try again.',
+        submit: error.message || 'Registration failed. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
