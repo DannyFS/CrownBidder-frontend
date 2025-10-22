@@ -83,9 +83,16 @@ export default function LoginPage() {
       const result = await login(credentials, false); // isPlatform = false for tenant login
 
       if (result.success) {
-        // Redirect to intended page or homepage
+        // Redirect based on user role
         const redirect = new URLSearchParams(window.location.search).get('redirect');
-        router.push(redirect || '/');
+
+        // If user is admin, redirect to admin portal
+        if (result.user?.role === 'admin') {
+          router.push(redirect || '/admin');
+        } else {
+          // Regular users go to homepage or intended page
+          router.push(redirect || '/');
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -104,6 +111,18 @@ export default function LoginPage() {
       <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
+          {/* Site Logo */}
+          {site?.logoUrl && (
+            <div className="flex justify-center mb-6">
+              <img
+                src={site.logoUrl}
+                alt={site.name}
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+          )}
+
+          {/* Title */}
           <h1 className="text-3xl font-bold text-gray-900" style={{
             color: theme?.textColor || '#111827'
           }}>
@@ -184,7 +203,10 @@ export default function LoginPage() {
 
               <Link
                 href="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-500"
+                className="text-sm hover:underline"
+                style={{
+                  color: theme?.primaryColor || '#3b82f6'
+                }}
               >
                 Forgot password?
               </Link>
@@ -209,7 +231,13 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link
+                href="/register"
+                className="font-medium hover:underline"
+                style={{
+                  color: theme?.primaryColor || '#3b82f6'
+                }}
+              >
                 Create one now
               </Link>
             </p>

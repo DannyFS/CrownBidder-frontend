@@ -142,6 +142,17 @@ export default function RegisterPage() {
       <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
+          {/* Site Logo */}
+          {site?.logoUrl && (
+            <div className="flex justify-center mb-6">
+              <img
+                src={site.logoUrl}
+                alt={site.name}
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+          )}
+
           <h1 className="text-3xl font-bold text-gray-900" style={{
             color: theme?.textColor || '#111827'
           }}>
@@ -384,11 +395,19 @@ export default function RegisterPage() {
                 />
                 <label htmlFor="agreeToTerms" className="ml-2 text-sm text-gray-700">
                   I agree to the{' '}
-                  <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+                  <Link
+                    href="/terms"
+                    className="hover:underline"
+                    style={{ color: theme?.primaryColor || '#3b82f6' }}
+                  >
                     Terms and Conditions
                   </Link>{' '}
                   and{' '}
-                  <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+                  <Link
+                    href="/privacy"
+                    className="hover:underline"
+                    style={{ color: theme?.primaryColor || '#3b82f6' }}
+                  >
                     Privacy Policy
                   </Link>{' '}
                   *
@@ -432,7 +451,11 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link
+                href="/login"
+                className="font-medium hover:underline"
+                style={{ color: theme?.primaryColor || '#3b82f6' }}
+              >
                 Sign in
               </Link>
             </p>

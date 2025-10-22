@@ -37,10 +37,22 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // Get user from token
-      const userData = getUserFromToken(token);
-      setUser(userData);
-      setIsAuthenticated(true);
+      // Set the token in the API client so it can be used for authenticated requests
+      api.setToken(token);
+
+      // Fetch the full user profile from the server instead of just decoding the token
+      try {
+        const response = await api.auth.me();
+        const userData = response.data.user;
+        setUser(userData);
+        setIsAuthenticated(true);
+      } catch (error) {
+        // If fetching user fails, the token is likely invalid
+        console.error('Failed to fetch user profile:', error);
+        api.removeToken();
+        setIsLoading(false);
+        return;
+      }
 
       // Refresh token if needed
       if (shouldRefreshToken(token)) {
@@ -48,8 +60,6 @@ export function AuthProvider({ children }) {
           const response = await api.auth.refresh();
           if (response.data.token) {
             api.setToken(response.data.token);
-            const newUserData = getUserFromToken(response.data.token);
-            setUser(newUserData);
           }
         } catch (error) {
           console.error('Token refresh failed:', error);
