@@ -52,15 +52,23 @@ export function SiteProvider({ children }) {
       } else {
         // We're on the platform domain
         setIsTenantSite(false);
-        
+
         // Try to detect from hostname as fallback
         const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
         const platformDomains = ['localhost', 'crownbidder.com', 'app.crownbidder.com'];
-        
+
         if (!platformDomains.some(domain => hostname.includes(domain))) {
           // This might be a tenant site, try to resolve
           try {
-            const response = await api.sites.resolve(hostname);
+            // Extract subdomain from hostname
+            let domainToResolve = hostname;
+
+            // If it's a subdomain of crownbidder.com, extract just the subdomain part
+            if (hostname.endsWith('.crownbidder.com')) {
+              domainToResolve = hostname.replace('.crownbidder.com', '');
+            }
+
+            const response = await api.sites.resolve(domainToResolve);
             setSite(response.data.site);
             setIsTenantSite(true);
             setTenantData(response.data.site);
